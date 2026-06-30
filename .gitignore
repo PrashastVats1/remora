@@ -1,0 +1,20 @@
+# Claude Code
+.claude/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Extension build artifacts
+remura-extension/popup/popup.js
+remura-extension/dist/
+
+# Zip packages
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db

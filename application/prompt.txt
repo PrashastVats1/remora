@@ -1,0 +1,245 @@
+I'm building SherpaGuard (To be changed) — a security product that detects hidden 
+prompt injection attacks embedded in web pages, targeting AI agents 
+that browse the web on a user's behalf.
+
+This session's goal: build the CORE DETECTION ENGINE as a standalone, 
+well-architected TypeScript package. This package is the most important 
+piece of the entire product — it will be consumed by:
+1. A Chrome extension (Manifest V3 content script, runs in browser)
+2. A Node.js backend service (runs against Playwright-rendered DOM, 
+   for server-side scanning of arbitrary URLs)
+
+Because it runs in two different environments, the engine must:
+- Have ZERO dependency on browser-only globals where avoidable 
+  (window, chrome.* APIs) — it should operate purely on a `Document` 
+  object passed into it, so both a real browser DOM and a 
+  Playwright/jsdom DOM work identically
+- Be pure TypeScript, framework-agnostic, with no React/Vue/etc
+- Be structured as a publishable npm package (even if not published yet)
+
+---
+
+PACKAGE STRUCTURE
+
+Create a new directory `sherpaguard-engine/` with this structure:
+
+sherpaguard-engine/
+├── src/
+│   ├── index.ts              # Public API exports
+│   ├── scanner.ts             # Main scan orchestrator
+│   ├── detectors/
+│   │   ├── hiddenElements.ts  # display:none, visibility:hidden, opacity:0
+│   │   ├── offScreen.ts        # position:absolute + left/top large negative values
+│   │   ├── tinyElements.ts     # 1px x 1px or smaller elements
+│   │   ├── colorMatch.ts        # text color matching background color (invisible text)
+│   │   ├── ariaHidden.ts         # aria-hidden elements containing text
+│   │   ├── htmlComments.ts        # HTML comment nodes
+│   │   ├── metaTags.ts             # suspicious <meta> tags
+│   │   └── cssContent.ts            # CSS ::before/::after content properties
+│   ├── patterns/
+│   │   └── injectionPhrases.ts       # known injection phrase patterns (regex/keyword list)
+│   ├── types.ts                       # Shared TypeScript types/interfaces
+│   └── utils/
+│       ├── domWalker.ts                # DOM traversal utilities (WeakSet-based visited tracking)
+│       └── textExtraction.ts            # Extracts "what an AI agent would read" from a page
+├── tests/
+│   ├── fixtures/
+│   │   └── victim.html                  # Test HTML with known injections (8 types, similar 
+│   │                                       to the demo's SkyRoute page)
+│   ├── scanner.test.ts
+│   └── detectors/
+│       └── *.test.ts                     # one test file per detector
+├── package.json
+├── tsconfig.json
+├── README.md
+└── .gitignore
+
+---
+
+CORE TYPES (types.ts)
+
+Define these interfaces:
+
+interface Injection {
+  id: string                    // unique id for this finding
+  type: InjectionType            // enum: 'hidden-element' | 'off-screen' | 
+                                  // 'tiny-element' | 'color-match' | 
+                                  // 'aria-hidden' | 'html-comment' | 
+                                  // 'meta-tag' | 'css-content'
+  severity: 'low' | 'medium' | 'high'
+  matchedText: string             // the suspicious text found
+  matchedPattern?: string          // which injection phrase pattern matched (if any)
+  selector?: string                  // CSS selector path to the element (for highlighting)
+  location: {
+    tagName?: string
+    attributes?: Record<string, string>
+  }
+}
+
+interface ScanResult {
+  url?: string
+  timestamp: string
+  injections: Injection[]
+  extractedText: string            // the full "AI agent view" of the page, 
+                                    // as structured markdown-like text
+  summary: {
+    total: number
+    bySeverity: Record<'low'|'medium'|'high', number>
+    byType: Record<InjectionType, number>
+  }
+}
+
+interface ScanOptions {
+  document: Document                // works with real DOM or jsdom/Playwright DOM
+  url?: string                       // optional, for context in results
+  minCssContentLength?: number       // default 20, avoids false positives on 
+                                      // decorative ::before content
+}
+
+---
+
+DETECTION LOGIC — PORT FROM EXISTING DEMO
+
+I have an existing working demo (vanilla JS) with a function called 
+`extractPage` that does DOM walking and injection detection. Port and 
+IMPROVE this logic into the modular detector structure above. Key 
+behaviors to preserve:
+
+1. hiddenKind() check runs BEFORE semantic text extraction — so a 
+   hidden <p> is caught as an injection, not extracted as normal 
+   body text
+2. Use two WeakSets (visited + textCaptured) during DOM walking to 
+   avoid double-visiting elements and double-printing text
+3. Headings: clone the element, strip aria-hidden children to get 
+   clean heading text for extraction, but still flag the stripped 
+   aria-hidden content as a separate injection
+4. Meta tag injections: collected via querySelectorAll('meta[name][content]'), 
+   skip standard meta tags (viewport, charset, description, og:*, 
+   twitter:*, robots, etc) — only flag meta tags with suspicious 
+   names/content
+5. CSS ::before/::after: scan document.styleSheets and cssRules, 
+   filter content shorter than minCssContentLength (default 20 chars) 
+   to avoid flagging decorative icons/checkmarks
+6. Color-match detection: compare computed text color vs computed 
+   background color (including inherited background from ancestors) — 
+   flag if contrast is near-zero
+7. Off-screen detection: position:absolute/fixed combined with 
+   left/top/right/bottom values that push the element far outside 
+   the viewport (e.g. less than -999px or greater than viewport bounds)
+
+---
+
+INJECTION PHRASE PATTERNS (patterns/injectionPhrases.ts)
+
+Build a categorized, EXTENSIBLE list of regex/keyword patterns that 
+indicate injection attempts. Organize by category for easy future 
+additions:
+
+- Instruction overrides: "ignore previous instructions", "ignore all 
+  previous", "disregard your instructions", "forget your instructions", 
+  "new instructions", "system prompt update", "override"
+- Role manipulation: "you are now", "act as", "you are no longer", 
+  "admin mode", "evaluation mode", "developer mode"
+- Data exfiltration: "forward to", "send to", "share with", 
+  "reveal", "include in"
+- Action manipulation: "do not complete", "instead output", "instead 
+  tell the user", "repeat back"
+- Conditional triggers: "if asked", "when the user says", "codeword"
+
+Export this as a typed array of { category: string, pattern: RegExp, 
+severity: 'low'|'medium'|'high' }[] so detectors can match matchedText 
+against these patterns to assign severity and matchedPattern.
+
+---
+
+SCANNER ORCHESTRATOR (scanner.ts)
+
+Export a single main function:
+
+export function scanDocument(options: ScanOptions): ScanResult
+
+This should:
+1. Run all detectors against options.document
+2. Run the text extraction to build extractedText
+3. Cross-reference detector findings against injection phrase patterns 
+   to assign severity and matchedPattern
+4. Deduplicate findings (same element flagged by multiple detectors 
+   should produce one Injection with multiple types noted, not 
+   multiple entries)
+5. Build and return the ScanResult with summary counts
+
+---
+
+TESTING
+
+Use Vitest (fast, works well with TS, good jsdom integration).
+
+- tests/fixtures/victim.html: create a realistic travel booking page 
+  (similar to SkyRoute from the demo) with exactly 8 planted 
+  injections, one of each type listed in InjectionType
+- tests/scanner.test.ts: load victim.html into jsdom, run scanDocument, 
+  assert:
+  - exactly 8 injections found
+  - each injection has the correct `type`
+  - summary counts are correct
+  - extractedText does NOT include the injected text as normal content
+  - extractedText DOES include the legitimate page content (headings, 
+    nav, etc)
+- One test file per detector in tests/detectors/, testing that detector 
+  in isolation with minimal fixture HTML (small inline HTML strings, 
+  not the full fixture)
+- Add a test for false-positive prevention: a page with a legitimate 
+  ::before checkmark icon (short content) should NOT be flagged
+- Add a test for the meta tag allowlist: standard meta tags should 
+  NOT be flagged even if scanDocument runs on a page with many of them
+
+---
+
+PACKAGE.JSON REQUIREMENTS
+
+- Name: "sherpaguard-engine"(to be changed) 
+- Set up build with tsup or tsc for both ESM and CJS output (so it 
+  works in both a Vite-bundled extension and a CommonJS Node backend)
+- Scripts: "build", "test", "test:watch", "typecheck"
+- Peer-dependency-free — jsdom only as a devDependency for testing, 
+  not a runtime dependency (the consumer provides the Document)
+
+---
+
+README.md
+
+Write a clear README covering:
+- What this package does (one paragraph)
+- Installation
+- Basic usage example showing scanDocument() called with a Document 
+  object
+- The shape of ScanResult with a short example output (JSON)
+- How this is intended to be used in two contexts: browser extension 
+  content script (document is the live page DOM) and server-side 
+  with Playwright (document is page.evaluate-accessible DOM, or use 
+  Playwright's own DOM serialization into jsdom)
+- A section "Adding new detectors" explaining the detector interface 
+  pattern, for future extensibility
+- A section "Adding new injection patterns" explaining how to extend 
+  patterns/injectionPhrases.ts
+
+---
+
+IMPORTANT QUALITY BARS
+
+- Every detector function should have a clear single responsibility 
+  and its own TypeScript interface for its specific output before 
+  it's normalized into the common Injection type
+- No `any` types anywhere — strict TypeScript (strict: true in tsconfig)
+- Every exported function needs a JSDoc comment explaining what it 
+  does, parameters, and return value
+- Run `npm run typecheck` and `npm run test` at the end and fix any 
+  errors before considering this done
+- Do not add a UI, do not add React, do not add anything 
+  browser-extension-specific or backend-specific — this package is 
+  purely the detection engine
+
+Start by creating the package.json and tsconfig.json, then build out 
+the directory structure, then implement detectors one at a time with 
+their tests, then the scanner orchestrator, then the full integration 
+test with victim.html fixture, then the README.

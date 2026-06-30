@@ -1,0 +1,18 @@
+{
+  "name": "remura-extension",
+  "version": "0.1.0",
+  "description": "Chrome MV3 extension powered by remura-engine",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "build:icons": "node scripts/generate-icons.js",
+    "typecheck": "tsc --noEmit",
+    "watch": "tsup --watch"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
+  }
+}
