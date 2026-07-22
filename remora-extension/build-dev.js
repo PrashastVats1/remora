@@ -1,5 +1,5 @@
 /**
- * Build script for the Remura Chrome extension.
+ * Build script for the Remora Chrome extension.
  *
  * Uses the tsup Node.js API directly so it works on NTFS filesystems
  * where native binaries cannot be executed. Run with:
@@ -19,8 +19,8 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Resolve the engine source — works both in the repo and when copied to /tmp.
-const engineSrc = resolve(__dirname, '../remura-engine/src/index.ts');
-const alias = { 'remura-engine': engineSrc };
+const engineSrc = resolve(__dirname, '../remora-engine/src/index.ts');
+const alias = { 'remora-engine': engineSrc };
 
 const shared = {
   format: ['esm'],

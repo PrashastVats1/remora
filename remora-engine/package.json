@@ -1,5 +1,5 @@
 {
-  "name": "remura-engine",
+  "name": "remora-engine",
   "version": "0.1.0",
   "description": "Core detection engine for identifying hidden prompt injection attacks in web pages",
   "type": "module",

@@ -1,7 +1,7 @@
 {
-  "name": "remura-extension",
-  "version": "0.1.0",
-  "description": "Chrome MV3 extension powered by remura-engine",
+  "name": "remora-extension",
+  "version": "0.2.0",
+  "description": "Chrome MV3 extension powered by remora-engine",
   "private": true,
   "type": "module",
   "scripts": {

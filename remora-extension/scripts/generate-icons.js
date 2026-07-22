@@ -1,8 +1,8 @@
 /**
- * Generates icon16.png, icon48.png, and icon128.png for the Remura extension.
+ * Generates icon16.png, icon48.png, and icon128.png for the Remora extension.
  * Uses only Node.js built-in modules — no external dependencies.
  *
- * The icon is a shield shape filled with the Remura accent colour (#e63946)
+ * The icon is a shield shape filled with the Remora accent colour (#e63946)
  * on a dark background (#0e0e0e).
  */
 
