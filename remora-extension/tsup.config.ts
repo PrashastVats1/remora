@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 import { resolve } from 'path';
 
-const engineAlias = { 'remura-engine': resolve(__dirname, '../remura-engine/src/index.ts') };
+const engineAlias = { 'remora-engine': resolve(__dirname, '../remora-engine/src/index.ts') };
 
 export default defineConfig([
   {

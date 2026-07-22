@@ -1,14 +1,14 @@
-# Remura — Privacy Policy
+# Remora — Privacy Policy
 
 **Last updated: July 2026**
 
 ## Summary
 
-Remura does not collect, transmit, or store any personal data. All processing happens locally in your browser. Nothing ever leaves your device.
+Remora does not collect, transmit, or store any personal data. All processing happens locally in your browser. Nothing ever leaves your device.
 
-## What Remura does
+## What Remora does
 
-When you visit a web page, Remura scans the page's DOM (the underlying HTML structure) to detect hidden prompt injection attacks. This scan is performed entirely within your browser using locally bundled code.
+When you visit a web page, Remora scans the page's DOM (the underlying HTML structure) to detect hidden prompt injection attacks. This scan is performed entirely within your browser using locally bundled code.
 
 ## Data we do NOT collect
 
@@ -36,4 +36,4 @@ Scan results (injection counts and types found on a page) are stored temporarily
 
 ## Contact
 
-If you have questions about this privacy policy, open an issue at [github.com/PrashastVats1/remura/issues](https://github.com/PrashastVats1/remura/issues).
+If you have questions about this privacy policy, open an issue at [github.com/PrashastVats1/remora/issues](https://github.com/PrashastVats1/remora/issues).

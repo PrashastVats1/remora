@@ -6,7 +6,7 @@ set -e
 
 SRC="$(cd "$(dirname "$0")" && pwd)"
 TMP=/tmp/sg-ext-build
-ENGINE_SRC="$(cd "$SRC/../remura-engine" && pwd)"
+ENGINE_SRC="$(cd "$SRC/../remora-engine" && pwd)"
 
 echo "→ Copying extension source to $TMP …"
 rm -rf "$TMP"

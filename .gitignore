@@ -9,8 +9,8 @@ dist/
 *.tsbuildinfo
 
 # Extension build artifacts
-remura-extension/popup/popup.js
-remura-extension/dist/
+remora-extension/popup/popup.js
+remora-extension/dist/
 
 # Zip packages
 *.zip

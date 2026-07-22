@@ -1,15 +1,15 @@
-# remura-engine
+# remora-engine
 
 Core detection engine for identifying hidden prompt injection attacks embedded in web pages. It scans a `Document` object for text that has been deliberately concealed from human readers but remains visible to AI agents browsing the page.
 
 ## What it does
 
-Web pages can hide malicious instructions using CSS tricks (display:none, off-screen positioning, tiny elements, colour-matched text), HTML comment nodes, suspicious `<meta>` tags, CSS `::before`/`::after` content properties, and `aria-hidden` attributes. An AI agent reading such a page may unknowingly execute these instructions. `remura-engine` detects all eight of these hiding techniques and returns structured findings with severity scores, matched injection patterns, and the "AI agent view" of the page (what the agent would actually read).
+Web pages can hide malicious instructions using CSS tricks (display:none, off-screen positioning, tiny elements, colour-matched text), HTML comment nodes, suspicious `<meta>` tags, CSS `::before`/`::after` content properties, and `aria-hidden` attributes. An AI agent reading such a page may unknowingly execute these instructions. `remora-engine` detects all eight of these hiding techniques and returns structured findings with severity scores, matched injection patterns, and the "AI agent view" of the page (what the agent would actually read).
 
 ## Installation
 
 ```bash
-npm install remura-engine
+npm install remora-engine
 ```
 
 The package has **no runtime dependencies**. It operates purely on a `Document` object you provide — jsdom, Playwright, or a live browser DOM all work.
@@ -17,7 +17,7 @@ The package has **no runtime dependencies**. It operates purely on a `Document` 
 ## Basic usage
 
 ```ts
-import { scanDocument } from 'remura-engine';
+import { scanDocument } from 'remora-engine';
 
 const result = scanDocument({
   document: document,           // any Document object
@@ -72,7 +72,7 @@ console.log(result.extractedText);   // what an AI agent would read
 ### Browser extension (Manifest V3 content script)
 
 ```ts
-import { scanDocument } from 'remura-engine';
+import { scanDocument } from 'remora-engine';
 
 // In a content script, `document` is the live page DOM.
 const result = scanDocument({ document, url: location.href });
@@ -86,7 +86,7 @@ The package has no dependency on `window`, `chrome.*`, or any browser-specific A
 ```ts
 import { chromium } from 'playwright';
 import { JSDOM } from 'jsdom';
-import { scanDocument } from 'remura-engine';
+import { scanDocument } from 'remora-engine';
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
