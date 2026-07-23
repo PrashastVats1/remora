@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Remora",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Detects hidden prompt injection attacks embedded in web pages — protecting your AI agent from being hijacked.",
   "permissions": ["storage", "tabs", "notifications"],
   "host_permissions": ["<all_urls>"],

@@ -179,3 +179,123 @@ body {
 .findings::-webkit-scrollbar { width: 4px; }
 .findings::-webkit-scrollbar-track { background: transparent; }
 .findings::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Intent badge ── */
+.finding-intent {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #555;
+  background: #111;
+  border: 1px solid #222;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: auto;
+}
+
+/* ── Why explanation ── */
+.finding-why {
+  font-size: 10px;
+  color: #444;
+  line-height: 1.55;
+  margin-top: 5px;
+  font-style: italic;
+}
+
+/* ── Links section ── */
+.links-section {
+  border-top: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.link-item {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 4px 0;
+  letter-spacing: 0.01em;
+  transition: color 0.15s;
+}
+.link-item:hover { color: var(--text); }
+
+.link-item--cta {
+  color: #f4a261;
+  font-weight: 600;
+}
+.link-item--cta:hover { color: #fbbf80; }
+
+/* ── Trusted Sites section ── */
+.trusted-section {
+  border-top: 1px solid var(--border);
+  padding: 10px 16px 12px;
+}
+
+.trusted-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.trusted-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.trusted-count {
+  font-size: 9px;
+  font-weight: 700;
+  color: #555;
+  background: #1a1a1a;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 5px;
+  line-height: 16px;
+}
+
+.trusted-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid #1a1a1a;
+}
+.trusted-item:last-child { border-bottom: none; }
+
+.trusted-hostname {
+  font-size: 11px;
+  color: #888;
+  font-family: var(--mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trusted-remove {
+  background: none;
+  border: none;
+  color: #444;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.trusted-remove:hover { color: var(--accent); }
+
+.trusted-empty {
+  font-size: 10px;
+  color: #444;
+  line-height: 1.6;
+  font-style: italic;
+  padding: 2px 0 4px;
+}
