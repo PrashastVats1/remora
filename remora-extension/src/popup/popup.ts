@@ -1,6 +1,9 @@
 import type { ScanResult, Injection, Severity } from 'remora-engine';
 
-const root = document.getElementById('root')!;
+const root        = document.getElementById('root')!;
+const trustedRoot = document.getElementById('trusted-root')!;
+
+const USER_SITES_KEY = 'rm_user_sites';;
 
 function esc(s: string): string {
   return s
@@ -138,6 +141,44 @@ function severityRank(s: Severity): number {
   return s === 'high' ? 2 : s === 'medium' ? 1 : 0;
 }
 
+async function renderTrustedSites(): Promise<void> {
+  const stored = await chrome.storage.local.get(USER_SITES_KEY);
+  const sites: string[] = stored[USER_SITES_KEY] ?? [];
+
+  const body = sites.length === 0
+    ? `<div class="trusted-empty">No trusted sites yet. Click "Don't scan this site again" on any warning to add one.</div>`
+    : sites.map(h => `
+        <div class="trusted-item">
+          <span class="trusted-hostname">${esc(h)}</span>
+          <button class="trusted-remove" data-host="${esc(h)}" title="Remove">×</button>
+        </div>
+      `).join('');
+
+  const countBadge = sites.length > 0
+    ? `<span class="trusted-count">${sites.length}</span>`
+    : '';
+
+  trustedRoot.innerHTML = `
+    <div class="trusted-section">
+      <div class="trusted-header">
+        <span class="trusted-title">Trusted Sites</span>
+        ${countBadge}
+      </div>
+      <div class="trusted-list">${body}</div>
+    </div>
+  `;
+
+  trustedRoot.querySelectorAll<HTMLButtonElement>('.trusted-remove').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const host = btn.dataset.host ?? '';
+      const st = await chrome.storage.local.get(USER_SITES_KEY);
+      const updated = ((st[USER_SITES_KEY] ?? []) as string[]).filter(s => s !== host);
+      await chrome.storage.local.set({ [USER_SITES_KEY]: updated });
+      await renderTrustedSites();
+    });
+  });
+}
+
 async function init(): Promise<void> {
   renderScanning();
 
@@ -152,6 +193,7 @@ async function init(): Promise<void> {
 
   if (tabId == null) {
     renderScanning();
+    await renderTrustedSites();
     return;
   }
 
@@ -161,6 +203,7 @@ async function init(): Promise<void> {
 
   if (!result) {
     renderScanning();
+    await renderTrustedSites();
     return;
   }
 
@@ -169,6 +212,8 @@ async function init(): Promise<void> {
   } else {
     renderFindings(result);
   }
+
+  await renderTrustedSites();
 }
 
 init();

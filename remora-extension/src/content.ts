@@ -2,6 +2,22 @@ import { scanDocument } from 'remora-engine';
 import type { ScanResult } from 'remora-engine';
 
 const COUNTDOWN_SEC = 30;
+const USER_SITES_KEY = 'rm_user_sites';
+
+async function isUserTrusted(): Promise<boolean> {
+  const stored = await chrome.storage.local.get(USER_SITES_KEY);
+  const sites: string[] = stored[USER_SITES_KEY] ?? [];
+  return sites.includes(location.hostname);
+}
+
+async function trustCurrentSite(): Promise<void> {
+  const stored = await chrome.storage.local.get(USER_SITES_KEY);
+  const sites: string[] = stored[USER_SITES_KEY] ?? [];
+  if (!sites.includes(location.hostname)) {
+    sites.push(location.hostname);
+    await chrome.storage.local.set({ [USER_SITES_KEY]: sites });
+  }
+}
 
 // ─── Domain warning overlay ───────────────────────────────────────────────────
 
@@ -52,10 +68,16 @@ function domainWarningMarkup(reason: string): string {
   }
   .panel-footer {
     padding: 10px 20px; border-top: 1px solid #1a1a1a;
-    display: flex; justify-content: flex-end;
+    display: flex; align-items: center; justify-content: space-between;
   }
+  .trust-link {
+    background: none; border: none; color: #888; font-size: 12px;
+    cursor: pointer; font-family: inherit; letter-spacing: 0.02em;
+    padding: 0; transition: color 0.15s;
+  }
+  .trust-link:hover { color: #f0f0f0; text-decoration: underline; }
   .false-flag-link {
-    font-size: 10px; color: #333; text-decoration: none; letter-spacing: 0.02em;
+    font-size: 10px; color: #555; text-decoration: none; letter-spacing: 0.02em;
     transition: color 0.15s;
   }
   .false-flag-link:hover { color: #888; }
@@ -83,6 +105,7 @@ function domainWarningMarkup(reason: string): string {
       </div>
     </div>
     <div class="panel-footer">
+      <button class="trust-link" id="rm-domain-trust">Don't scan this site again</button>
       <a class="false-flag-link" href="https://remora.watch/raise-a-ticket" target="_blank" rel="noopener">
         Report false positive ↗
       </a>
@@ -106,9 +129,23 @@ function injectDomainWarning(reason: string): void {
   document.body.appendChild(host);
 
   shadow.getElementById('rm-domain-back')!.addEventListener('click', () => {
-    history.back();
+    if (history.length > 1) {
+      history.back();
+    } else {
+      // No history to go back to (e.g. direct URL / new tab) — close the tab.
+      // If close is blocked (not opened by script), just dismiss the overlay
+      // so the user can navigate away manually.
+      window.close();
+      document.documentElement.style.overflow = prevOverflow;
+      host.remove();
+    }
   });
   shadow.getElementById('rm-domain-proceed')!.addEventListener('click', () => {
+    document.documentElement.style.overflow = prevOverflow;
+    host.remove();
+  });
+  shadow.getElementById('rm-domain-trust')!.addEventListener('click', async () => {
+    await trustCurrentSite();
     document.documentElement.style.overflow = prevOverflow;
     host.remove();
   });
@@ -258,9 +295,15 @@ function overlayMarkup(result: ScanResult): string {
   /* ── Panel footer ── */
   .panel-footer {
     padding: 10px 20px; border-top: 1px solid #1a1a1a;
-    display: flex; align-items: center; justify-content: flex-end; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
   }
-  .false-flag-link { font-size: 10px; color: #333; text-decoration: none; letter-spacing: 0.02em; transition: color 0.15s; }
+  .trust-link {
+    background: none; border: none; color: #888; font-size: 12px;
+    cursor: pointer; font-family: inherit; letter-spacing: 0.02em;
+    padding: 0; transition: color 0.15s;
+  }
+  .trust-link:hover { color: #f0f0f0; text-decoration: underline; }
+  .false-flag-link { font-size: 10px; color: #555; text-decoration: none; letter-spacing: 0.02em; transition: color 0.15s; }
   .false-flag-link:hover { color: #888; }
 </style>
 
@@ -320,6 +363,7 @@ function overlayMarkup(result: ScanResult): string {
     </div>
 
     <div class="panel-footer">
+      <button class="trust-link" id="rm-trust">Don't scan this site again</button>
       <a class="false-flag-link" href="https://remora.watch/raise-a-ticket" target="_blank" rel="noopener">
         Report false positive ↗
       </a>
@@ -438,11 +482,18 @@ function injectOverlay(result: ScanResult): void {
   tooltip.addEventListener('click', (e) => { if (e.target === tooltip) tooltip.classList.remove('open'); });
 
   ackBtn.addEventListener('click', dismiss);
+
+  shadow.getElementById('rm-trust')!.addEventListener('click', async () => {
+    await trustCurrentSite();
+    dismiss();
+  });
 }
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
+  if (await isUserTrusted()) return;
+
   // Tier 1 + 2 domain check — runs before injection scanning.
   try {
     const domainResponse = await chrome.runtime.sendMessage({

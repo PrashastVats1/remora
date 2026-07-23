@@ -14,22 +14,43 @@ const SAFE_BROWSING_URL =
 
 // ─── Tier 1: local regex patterns ────────────────────────────────────────────
 
-// Legitimate TLDs that popular brands use (used to spot fakes).
+// Canonical domains for each brand — never flagged, even if the regex below matches.
+// This prevents false positives on the real sites (e.g. linkedin.com matching the
+// linkedin impersonation pattern).
+const BRAND_CANONICAL_DOMAINS: string[] = [
+  'paypal.com', 'apple.com', 'icloud.com',
+  'google.com', 'google.co.uk', 'google.co.in', 'googleapis.com', 'gstatic.com',
+  'amazon.com', 'amazon.co.uk', 'amazon.in',
+  'microsoft.com', 'live.com', 'outlook.com', 'office.com',
+  'netflix.com',
+  'facebook.com', 'fb.com', 'fbcdn.net',
+  'instagram.com',
+  'twitter.com', 'x.com', 't.co',
+  'linkedin.com',
+  'dropbox.com',
+  'coinbase.com',
+  'binance.com',
+  'metamask.io',
+];
+
+// Patterns that match typosquatted/impersonation variants of popular brands.
+// Every pattern requires at least one DIGIT substitution (0 for o, 1 for i/l)
+// or a symbol trick — so the real domain never matches.
 const KNOWN_BRANDS: [brand: string, pattern: RegExp][] = [
-  ['paypal',    /paypa[^l]|pay-?pal\./i],
-  ['apple',     /app[^l]e|app1e|app-le\./i],
-  ['google',    /go{3,}gle|g00gle|g0ogle/i],
-  ['amazon',    /amaz[0o]n|amaz-on/i],
-  ['microsoft', /micros[o0]ft|m1crosoft/i],
-  ['netflix',   /netfl[i1]x|net-?flix/i],
-  ['facebook',  /faceb[o0]{2}k|face-?book/i],
-  ['instagram', /instagr[a@]m/i],
-  ['twitter',   /tw[i1]tter/i],
-  ['linkedin',  /l[i1]nked[i1]n/i],
-  ['dropbox',   /dr[o0]pbox/i],
-  ['coinbase',  /c[o0][i1]nbase/i],
-  ['binance',   /b[i1]nance/i],
-  ['metamask',  /meta-?mask/i],
+  ['paypal',    /paypa[^lp\w]|pay[-.]pal\./i],   // non-word char after paypa, or hyphen/dot separator
+  ['apple',     /app1e|4pple/i],                   // digit substitutions only
+  ['google',    /go{3,}gle|g00gle|g0ogle/i],       // 3+ o's or digit zeros
+  ['amazon',    /amaz0n/i],                         // digit zero, not letter o
+  ['microsoft', /micros0ft|m1crosoft/i],            // digit substitutions
+  ['netflix',   /netfl1x/i],                        // digit 1, not letter i
+  ['facebook',  /faceb00k|fac3book/i],              // digit substitutions
+  ['instagram', /instagr@m|1nstagram/i],            // @ symbol or leading digit
+  ['twitter',   /tw1tter/i],                        // digit 1, not letter i
+  ['linkedin',  /l1nked[i1]n|linkedl[^i]/i],       // digit sub or wrong char after linkedi
+  ['dropbox',   /dr0pbox/i],                        // digit 0, not letter o
+  ['coinbase',  /c0[i1]nbase|c[o]1nbase/i],        // at least one digit substitution
+  ['binance',   /b1nance/i],                        // digit 1, not letter i
+  ['metamask',  /meta[-]mask/i],                    // hyphen insertion only
 ];
 
 // Suspicious TLD patterns used in phishing.
@@ -44,6 +65,11 @@ const SUBDOMAIN_TRICK_RE = /^(paypal|apple|google|amazon|microsoft|netflix|faceb
 function tier1Check(hostname: string): { flagged: boolean; reason: string } {
   // Skip bare IP addresses — not typosquatting targets.
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
+    return { flagged: false, reason: '' };
+  }
+
+  // Never flag the real brand domains — prevents false positives on linkedin.com etc.
+  if (BRAND_CANONICAL_DOMAINS.some(d => hostname === d || hostname.endsWith(`.${d}`))) {
     return { flagged: false, reason: '' };
   }
 
@@ -65,8 +91,10 @@ function tier1Check(hostname: string): { flagged: boolean; reason: string } {
   }
 
   // Subdomain trick: paypal.com.attacker.xyz
+  // Requires 4+ parts to avoid false positives on legitimate ccTLD domains
+  // like amazon.co.jp (3 parts) which are not subdomain tricks.
   const parts = hostname.split('.');
-  if (parts.length >= 3) {
+  if (parts.length >= 4) {
     const sub = parts.slice(0, -2).join('.');
     if (SUBDOMAIN_TRICK_RE.test(sub + '.')) {
       return { flagged: true, reason: `Legitimate brand buried in subdomain — possible phishing` };
