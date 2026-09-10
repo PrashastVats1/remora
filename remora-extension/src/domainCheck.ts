@@ -5,10 +5,13 @@
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-// Embed your Google Safe Browsing API key here.
+// Injected at build time from remora-extension/.env (gitignored — see .env.example).
 // Free tier: 10,000 queries/day. Exceeding it returns 429 — not billed.
-// Move to a backend proxy later to keep the key private.
-const SAFE_BROWSING_API_KEY: string = 'AIzaSyCEOsTOWFSPfxi3LZkqyjcv68U3LImRGfE';
+// NOTE: this still ships inside the built extension and is extractable by anyone who
+// unpacks it — keeping it out of git only stops the *source* leak. A backend proxy is
+// the only way to keep the key itself private from end users.
+declare const __SAFE_BROWSING_API_KEY__: string;
+const SAFE_BROWSING_API_KEY: string = __SAFE_BROWSING_API_KEY__;
 const SAFE_BROWSING_URL =
   `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${SAFE_BROWSING_API_KEY}`;
 

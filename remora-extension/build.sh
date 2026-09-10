@@ -14,9 +14,11 @@ mkdir -p "$TMP"
 rsync -a --exclude=node_modules --exclude=dist --exclude=popup/popup.js \
   "$SRC/" "$TMP/"
 
-# Make engine source available alongside the extension in /tmp
-mkdir -p "$TMP/../sg-engine-src"
-rsync -a --exclude=node_modules "$ENGINE_SRC/" /tmp/rm-engine-src/
+# tsup.config.ts aliases 'remora-engine' to '../remora-engine/src/index.ts'
+# resolved relative to itself — i.e. a sibling of $TMP. Must land there exactly.
+echo "→ Copying engine source to $(dirname "$TMP")/remora-engine …"
+rm -rf "$(dirname "$TMP")/remora-engine"
+rsync -a --exclude=node_modules "$ENGINE_SRC/" "$(dirname "$TMP")/remora-engine/"
 
 echo "→ Installing dependencies …"
 npm install --prefix "$TMP" 2>&1 | tail -3
@@ -26,8 +28,7 @@ node "$TMP/scripts/generate-icons.js"
 cp -r "$TMP/icons/"* "$SRC/icons/"
 
 echo "→ Building TypeScript …"
-node "$TMP/node_modules/tsup/dist/cli-main.js" \
-  --config "$TMP/tsup.config.ts" 2>&1
+(cd "$TMP" && "$TMP/node_modules/.bin/tsup" --config "$TMP/tsup.config.ts")
 
 echo "→ Syncing build output back …"
 rsync -a "$TMP/dist/"  "$SRC/dist/"

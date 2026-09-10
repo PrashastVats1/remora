@@ -22,3 +22,8 @@ Thumbs.db
 # Local planning docs / screenshots — not part of the shipped project
 *.pdf
 extension_photos/
+
+# Secrets — never commit real API keys
+.env
+.env.*
+!.env.example
