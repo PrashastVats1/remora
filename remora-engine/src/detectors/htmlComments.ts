@@ -7,11 +7,13 @@ import type { RawFinding } from '../types.js';
  * @param doc - The document to scan.
  * @returns Raw findings for each comment node with meaningful text.
  */
+const SHOW_COMMENT = 0x80; // NodeFilter.SHOW_COMMENT — avoids browser-global dependency
+
 export function detectHtmlComments(doc: Document): RawFinding[] {
   const findings: RawFinding[] = [];
   const iterator = doc.createNodeIterator(
     doc.documentElement ?? doc,
-    NodeFilter.SHOW_COMMENT
+    SHOW_COMMENT
   );
 
   let node: Node | null;

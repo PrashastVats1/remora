@@ -1,30 +1,54 @@
 {
   "name": "remora-engine",
   "version": "0.1.0",
-  "description": "Core detection engine for identifying hidden prompt injection attacks in web pages",
+  "description": "DOM-based prompt injection detection engine for AI agent security",
   "type": "module",
+  "author": "Prashast Vats",
+  "license": "MIT",
+  "keywords": [
+    "prompt-injection",
+    "ai-security",
+    "ai-agents",
+    "mcp",
+    "browser-security",
+    "remora"
+  ],
+  "homepage": "https://remora.watch",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PrashastVats1/remora"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --clean",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "example": "node examples/basic-scan.mjs"
   },
   "devDependencies": {
+    "@types/jsdom": "^21.1.7",
     "jsdom": "^25.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0",
-    "vitest": "^2.0.0",
-    "@types/jsdom": "^21.1.7"
+    "vitest": "^2.0.0"
   }
 }

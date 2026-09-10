@@ -5,7 +5,8 @@ import { walkElements, elementAttributes, selectorPath } from '../utils/domWalke
  * Parses an rgb(r,g,b) or rgba(r,g,b,a) string into [r,g,b] components.
  * Returns null if the string is not parseable.
  */
-function parseRgb(color: string): [number, number, number] | null {
+function parseRgb(color: string | undefined): [number, number, number] | null {
+  if (!color) return null;
   const m = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
   if (!m) return null;
   return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])];
@@ -49,6 +50,16 @@ export function detectColorMatch(
 
     // Only leaf-ish elements to avoid double counting
     if (el.children.length > 3) continue;
+
+    // Skip pass-through wrappers: if some child already accounts for all of
+    // this element's text, defer to that child — otherwise a single phrase
+    // inside nested wrapper elements (an <html> whose only real content is
+    // one <body>, a line-wrapper around a syntax-highlighted token, etc.)
+    // is reported once per ancestor level instead of once total.
+    const dupChild = Array.from(el.children).find(
+      c => c.textContent?.trim() === text
+    );
+    if (dupChild) continue;
 
     const computed = getStyle(el);
     const fgStr = computed.color;

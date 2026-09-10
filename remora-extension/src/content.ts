@@ -169,7 +169,7 @@ function overlayMarkup(result: ScanResult): string {
     const col = severityColor[inj.severity] ?? '#aaa';
     return `<tr>
       <td><span class="badge">${inj.type}</span></td>
-      <td style="color:${col};font-weight:700;font-size:10px;text-transform:uppercase;padding:0 10px">${inj.severity}</td>
+      <td style="color:${col};font-weight:700;font-size:10px;text-transform:uppercase;padding:7px 10px">${inj.severity}</td>
       <td class="phrase">"${truncated}"</td>
     </tr>`;
   }).join('');
