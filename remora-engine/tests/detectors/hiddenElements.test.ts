@@ -8,21 +8,21 @@ function doc(html: string): Document {
 
 describe('detectHiddenElements', () => {
   it('flags display:none elements with text', () => {
-    const d = doc('<div style="display:none;">Secret injection</div>');
+    const d = doc('<div style="display:none;">Secret injection hidden from view</div>');
     const findings = detectHiddenElements(d);
     expect(findings).toHaveLength(1);
     expect(findings[0].type).toBe('hidden-element');
-    expect(findings[0].matchedText).toContain('Secret injection');
+    expect(findings[0].matchedText).toContain('Secret injection hidden from view');
   });
 
   it('flags visibility:hidden elements with text', () => {
-    const d = doc('<p style="visibility:hidden;">Hidden text</p>');
+    const d = doc('<p style="visibility:hidden;">Hidden text concealed from users</p>');
     const findings = detectHiddenElements(d);
     expect(findings).toHaveLength(1);
   });
 
   it('flags opacity:0 elements with text', () => {
-    const d = doc('<span style="opacity:0;">Zero opacity</span>');
+    const d = doc('<span style="opacity:0;">Zero opacity invisible content</span>');
     const findings = detectHiddenElements(d);
     expect(findings).toHaveLength(1);
   });

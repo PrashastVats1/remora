@@ -18,3 +18,7 @@ remora-extension/dist/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local planning docs / screenshots — not part of the shipped project
+*.pdf
+extension_photos/
