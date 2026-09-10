@@ -81,4 +81,17 @@ describe('scanDocument — victim.html integration', () => {
     const unique = new Set(ids);
     expect(unique.size).toBe(ids.length);
   });
+
+  it('each injection with a matchedPattern also carries its attack category', () => {
+    const VALID_CATEGORIES = [
+      'instruction-override', 'role-manipulation', 'data-exfiltration',
+      'action-manipulation', 'conditional-trigger',
+    ];
+    for (const inj of result.injections) {
+      if (inj.matchedPattern) {
+        expect(inj.category).toBeDefined();
+        expect(VALID_CATEGORIES).toContain(inj.category);
+      }
+    }
+  });
 });

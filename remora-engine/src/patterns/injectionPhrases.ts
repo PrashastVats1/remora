@@ -1,8 +1,8 @@
-import type { Severity } from '../types.js';
+import type { AttackCategory, Severity } from '../types.js';
 
 /** A single categorized injection phrase pattern. */
 export interface InjectionPattern {
-  category: string;
+  category: AttackCategory;
   pattern: RegExp;
   severity: Severity;
 }

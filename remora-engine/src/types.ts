@@ -12,6 +12,14 @@ export type InjectionType =
 /** Severity levels for injection findings. */
 export type Severity = 'low' | 'medium' | 'high';
 
+/** The attack intent behind a matched injection phrase. */
+export type AttackCategory =
+  | 'instruction-override'
+  | 'role-manipulation'
+  | 'data-exfiltration'
+  | 'action-manipulation'
+  | 'conditional-trigger';
+
 /** A single detected injection finding. */
 export interface Injection {
   /** Unique id for this finding. */
@@ -24,6 +32,8 @@ export interface Injection {
   matchedText: string;
   /** The injection phrase pattern that matched, if any. */
   matchedPattern?: string;
+  /** The attack intent behind the matched phrase, if any. */
+  category?: AttackCategory;
   /** CSS selector path to the element (for highlighting in UI). */
   selector?: string;
   /** Structural location information. */
