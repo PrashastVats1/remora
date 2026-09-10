@@ -1,8 +1,23 @@
 import { scanDocument } from 'remora-engine';
 import type { ScanResult } from 'remora-engine';
+import { CATEGORY_META } from './categoryMeta.js';
 
 const COUNTDOWN_SEC = 30;
 const USER_SITES_KEY = 'rm_user_sites';
+
+// Injection findings carry attacker-controlled page text (matchedText/matchedPattern).
+// It gets inserted into shadow.innerHTML below, so it must be escaped — otherwise a
+// page could hide HTML-entity-encoded markup (e.g. an onerror handler) that, once
+// textContent decodes it and we re-parse it via innerHTML, executes inside our own
+// warning overlay and could sabotage the very warning it triggered.
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 async function isUserTrusted(): Promise<boolean> {
   const stored = await chrome.storage.local.get(USER_SITES_KEY);
@@ -165,12 +180,14 @@ function overlayMarkup(result: ScanResult): string {
 
   const detailRows = result.injections.map(inj => {
     const phrase = (inj.matchedPattern ?? inj.matchedText).slice(0, 90);
-    const truncated = phrase.length === 90 ? phrase + '…' : phrase;
+    const truncated = escapeHtml(phrase.length === 90 ? phrase + '…' : phrase);
     const col = severityColor[inj.severity] ?? '#aaa';
+    const why = inj.category ? CATEGORY_META[inj.category].why : null;
+    const whyRow = why ? `<div class="why">↳ ${escapeHtml(why)}</div>` : '';
     return `<tr>
       <td><span class="badge">${inj.type}</span></td>
       <td style="color:${col};font-weight:700;font-size:10px;text-transform:uppercase;padding:7px 10px">${inj.severity}</td>
-      <td class="phrase">"${truncated}"</td>
+      <td class="phrase">"${truncated}"${whyRow}</td>
     </tr>`;
   }).join('');
 
@@ -221,6 +238,10 @@ function overlayMarkup(result: ScanResult): string {
   .details-table td { padding: 7px 10px; vertical-align: top; color: #888; }
   .details-table td:first-child { white-space: nowrap; padding-left: 12px; }
   .details-table td.phrase { font-family: "SFMono-Regular", Consolas, monospace; color: #555; word-break: break-all; }
+  .details-table td.phrase .why {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #777; margin-top: 4px; word-break: normal;
+  }
 
   /* ── Pineapple test ── */
   .pineapple-section {

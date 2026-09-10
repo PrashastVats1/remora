@@ -30,7 +30,10 @@ function normalize(raw: RawFinding): Injection {
     location: raw.location,
   };
   if (raw.selector) injection.selector = raw.selector;
-  if (match) injection.matchedPattern = match.matchedPattern;
+  if (match) {
+    injection.matchedPattern = match.matchedPattern;
+    injection.category = match.pattern.category;
+  }
   return injection;
 }
 
