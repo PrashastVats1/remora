@@ -3,6 +3,7 @@
   "version": "0.2.3",
   "description": "Chrome MV3 extension powered by remora-engine",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "tsup",
